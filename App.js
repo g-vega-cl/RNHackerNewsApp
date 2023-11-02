@@ -6,9 +6,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  RefreshControl
 } from "react-native";
 import axios from "axios";
 import Swipeable from "react-native-gesture-handler/Swipeable";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 
 const timeFromNow = (date) => {
   const now = new Date();
@@ -18,21 +21,27 @@ const timeFromNow = (date) => {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  const relativeTimeFormat = new Intl.RelativeTimeFormat("en", {
-    numeric: "auto",
-  });
-
-  if (minutes < 60) {
-    return relativeTimeFormat.format(-minutes, "minute");
+  if (minutes < 1) {
+    return "just now";
+  } else if (minutes === 1) {
+    return "1 minute ago";
+  } else if (minutes < 60) {
+    return `${minutes} minutes ago`;
+  } else if (hours === 1) {
+    return "1 hour ago";
   } else if (hours < 24) {
-    return relativeTimeFormat.format(-hours, "hour");
+    return `${hours} hours ago`;
+  } else if (days === 1) {
+    return "1 day ago";
   } else {
-    return relativeTimeFormat.format(-days, "day");
+    return `${days} days ago`;
   }
 };
 
 const Home = () => {
   const [data, setData] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
 
   useEffect(() => {
     axios
@@ -55,6 +64,8 @@ const Home = () => {
       inputRange: [0, 1],
       outputRange: [0, 1],
     });
+
+    
     return (
       <Animated.View style={[styles.deleteBox, { opacity }]}>
         <TouchableOpacity
@@ -71,9 +82,24 @@ const Home = () => {
     );
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    axios
+      .get("https://hn.algolia.com/api/v1/search_by_date?query=mobile")
+      .then((response) => {
+        setData(response.data.hits);
+        setRefreshing(false);
+      })
+      .catch((error) => {
+        console.log(error);
+        setRefreshing(false);
+      });
+};
+
   console.log("data", data);
   return (
     <View style={styles.container}>
+      <GestureHandlerRootView >
       <FlatList
         data={data}
         keyExtractor={(item) => `${item.story_id}-${item.created_at}`}
@@ -96,7 +122,14 @@ const Home = () => {
             </View>
           </Swipeable>
         )}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
       />
+      </GestureHandlerRootView>
     </View>
   );
 };
