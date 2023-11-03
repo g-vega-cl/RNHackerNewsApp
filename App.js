@@ -7,10 +7,14 @@ import {
   TouchableOpacity,
   Animated,
   RefreshControl,
+  Modal,
+  StatusBar
 } from "react-native";
 import axios from "axios";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { WebView } from 'react-native-webview';
+
 
 const timeFromNow = (date) => {
   const now = new Date();
@@ -42,6 +46,16 @@ const Home = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentURL, setCurrentURL] = useState(null);
+
+  const handleRowClick = (story_url) => {               
+    setCurrentURL(story_url);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {                           
+    setModalVisible(false);
+    setCurrentURL(null);
+  };
 
   useEffect(() => {
     axios
@@ -97,13 +111,27 @@ const Home = () => {
 
   console.log("data", data);
   return (
+    <>
+    <StatusBar />
     <View style={styles.container} >
       <GestureHandlerRootView>
+      <Modal                                         
+          animationType="slide"
+          visible={modalVisible}
+          onRequestClose={closeModal}
+        >
+          <View style={{ flex: 1 }}>
+            <WebView source={{ uri: currentURL }} />
+            <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+              <Text>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
         <FlatList
           data={data}
           keyExtractor={(item) => `${item.story_id}-${item.created_at}`}
           renderItem={({ item }) => (
-            <TouchableOpacity >
+            <TouchableOpacity  onPress={() => handleRowClick(item.story_url)} >
               <Swipeable
                 renderRightActions={(progress) =>
                   renderRightActions(progress, item)
@@ -126,6 +154,7 @@ const Home = () => {
         />
       </GestureHandlerRootView>
     </View>
+    </>
   );
 };
 
@@ -134,7 +163,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
     paddingBottom: "100px",
-    marginTop:"64px"
+    marginTop:"64px",
+    paddingHorizontal: 10, 
   },
   listItem: {
     borderBottomWidth: 0.5,
