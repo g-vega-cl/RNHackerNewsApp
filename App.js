@@ -6,12 +6,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
-  RefreshControl
+  RefreshControl,
 } from "react-native";
 import axios from "axios";
 import Swipeable from "react-native-gesture-handler/Swipeable";
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const timeFromNow = (date) => {
   const now = new Date();
@@ -41,7 +40,8 @@ const timeFromNow = (date) => {
 const Home = () => {
   const [data, setData] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-
+  const [modalVisible, setModalVisible] = useState(false);
+  const [currentURL, setCurrentURL] = useState(null);
 
   useEffect(() => {
     axios
@@ -65,7 +65,6 @@ const Home = () => {
       outputRange: [0, 1],
     });
 
-    
     return (
       <Animated.View style={[styles.deleteBox, { opacity }]}>
         <TouchableOpacity
@@ -94,41 +93,37 @@ const Home = () => {
         console.log(error);
         setRefreshing(false);
       });
-};
+  };
 
   console.log("data", data);
   return (
-    <View style={styles.container}>
-      <GestureHandlerRootView >
-      <FlatList
-        data={data}
-        keyExtractor={(item) => `${item.story_id}-${item.created_at}`}
-        renderItem={({ item }) => (
-          <Swipeable
-            renderRightActions={(progress) =>
-              renderRightActions(progress, item)
-            }
-            friction={2}
-            tension={40}
-          >
-            <View style={styles.listItem}>
-              <Text style={styles.title}>
-                {item._highlightResult.story_title.value}
-              </Text>
-              <Text style={styles.authorTime}>
-                {item._highlightResult.author.value} -{" "}
-                {timeFromNow(item.created_at)}
-              </Text>
-            </View>
-          </Swipeable>
-        )}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
-        }
-      />
+    <View style={styles.container} >
+      <GestureHandlerRootView>
+        <FlatList
+          data={data}
+          keyExtractor={(item) => `${item.story_id}-${item.created_at}`}
+          renderItem={({ item }) => (
+            <TouchableOpacity >
+              <Swipeable
+                renderRightActions={(progress) =>
+                  renderRightActions(progress, item)
+                }
+                friction={2}
+                tension={40}
+              >
+                <View style={styles.listItem} >
+                  <Text style={styles.title}>{item.story_title}</Text>
+                  <Text style={styles.authorTime}>
+                    {item.author} - {timeFromNow(item.created_at)}
+                  </Text>
+                </View>
+              </Swipeable>
+            </TouchableOpacity>
+          )}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
       </GestureHandlerRootView>
     </View>
   );
@@ -139,6 +134,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
     paddingBottom: "100px",
+    marginTop:"64px"
   },
   listItem: {
     borderBottomWidth: 0.5,
