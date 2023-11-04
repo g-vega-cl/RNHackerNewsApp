@@ -14,6 +14,8 @@ import axios from "axios";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { WebView } from 'react-native-webview';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 
 const timeFromNow = (date) => {
@@ -57,12 +59,28 @@ const Home = () => {
     setCurrentURL(null);
   };
 
+  const fetchData = async () => {
+    try {
+      const response = await axios.get("https://hn.algolia.com/api/v1/search_by_date?query=mobile");
+      setData(response.data.hits);
+  
+      // Save the fetched data to AsyncStorage
+      await AsyncStorage.setItem('offlineData', JSON.stringify(response.data.hits));
+    } catch (error) {
+      console.log(error);
+  
+      // If there's an error (e.g., no internet connection), retrieve the data from AsyncStorage
+      const offlineData = await AsyncStorage.getItem('offlineData');
+      if (offlineData !== null) {
+        setData(JSON.parse(offlineData));
+      }
+    }
+  };
+
   useEffect(() => {
-    axios
-      .get("https://hn.algolia.com/api/v1/search_by_date?query=mobile")
-      .then((response) => setData(response.data.hits))
-      .catch((error) => console.log(error));
+    fetchData();
   }, []);
+
 
   const handleDelete = (itemToDelete) => {
     setData((prevData) => prevData.filter((item) => item !== itemToDelete));
@@ -95,21 +113,13 @@ const Home = () => {
     );
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    axios
-      .get("https://hn.algolia.com/api/v1/search_by_date?query=mobile")
-      .then((response) => {
-        setData(response.data.hits);
-        setRefreshing(false);
-      })
-      .catch((error) => {
-        console.log(error);
-        setRefreshing(false);
-      });
+    await fetchData();
+    setRefreshing(false);
   };
+  
 
-  console.log("data", data);
   return (
     <>
     <StatusBar />
