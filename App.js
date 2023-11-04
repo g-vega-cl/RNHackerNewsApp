@@ -150,7 +150,7 @@ const Home = () => {
                 tension={40}
               >
                 <View style={styles.listItem} >
-                  <Text style={styles.title}>{item.story_title}</Text>
+                  <Text style={styles.title}>{item.story_title || item.title}</Text>
                   <Text style={styles.authorTime}>
                     {item.author} - {timeFromNow(item.created_at)}
                   </Text>
